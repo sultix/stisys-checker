@@ -13,20 +13,26 @@ class ReaderManager:
 
     user = None
     password = None
+    email = None
     senderPassword = None
+    senderEmail = None
+    smtpServer = None
+    repeatAfter = 3600
     conf = None
 
-    def __init__(self, user, password, senderPassword, conf):
+    def __init__(self, user, password, email, senderPassword, senderEmail, smtpServer, repeatAfter):
         self.user = user
         self.password = password
+        self.email = email
         self.senderPassword = senderPassword
-        self.conf = conf
+        self.senderEmail = senderEmail
+        self.repeatAfter = repeatAfter
 
     def timeout(self):
         print("Start Check...")
-        self.startTimer(int(self.conf["repeatAfter"]))
-        r = Reader(self.user, self.password, self.conf["email"], 
-            self.conf["sender.email"], self.senderPassword, self.conf["smtpServer"])
+        self.startTimer(int(self.repeatAfter))
+        r = Reader(self.user, self.password, self.email, 
+            self.senderEmail, self.senderPassword, self.smtpServer)
         r.start()
 
     def startTimer(self, repeatAfter):
@@ -43,24 +49,33 @@ def main():
     
     conf = readConf()
 
-    senderEmail = ''
-    if conf["sender.email"] == '':
+    email =  conf["email"]
+    if email == '':
+        email = input('email address: ')
+        conf["email"] = email
+
+    senderEmail = conf["sender.email"]
+    if senderEmail == '':
         senderEmail = input('Email address for sending of results: ')
         conf["sender.email"] = senderEmail
-    else:
-        senderEmail = conf["sender.email"]
 
     print('Configuration of smtp server for [' + senderEmail + ']')
+    smtpServer = conf["smtpServer"]
     if conf["smtpServer"] == '':
         smtpServer = input('smtp server address: ')
         conf["smtpServer"] = smtpServer
 
-    saveConf(conf)
-
     #set smt passwor
     senderPassword = getpass.getpass()
 
-    manager = ReaderManager(user, password, senderPassword, conf)
+    repeatAfter = conf["repeatAfter"]
+    if conf["repeatAfter"] == '':
+        repeatAfter = input('repeat time in sec.: ')
+        conf["repeatAfter"] = repeatAfter
+
+    saveConf(conf)
+
+    manager = ReaderManager(user, password, email, senderPassword, senderEmail, smtpServer, repeatAfter)
     manager.run()
 
 def readConf():
